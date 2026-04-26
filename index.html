@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PhytoClone</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #0f1f0f; color: #c8f0c8; margin: 0; padding: 20px; }
+    h1 { color: #4caf50; margin-bottom: 4px; }
+    .subtitle { font-size: 0.8em; color: #4caf5088; margin-bottom: 20px; letter-spacing: 0.1em; }
+    .plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .card { background: #1a2f1a; border-radius: 12px; padding: 20px; }
+    .card.source   { border-top: 3px solid #4caf50; }
+    .card.receiver { border-top: 3px solid #ffb300; }
+    .plant-label { font-size: 0.68em; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px; }
+    .source   .plant-label { color: #4caf50; }
+    .receiver .plant-label { color: #ffb300; }
+    .card h2 { margin: 0 0 14px 0; font-size: 1.1em; }
+    .stress-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 0.95em; margin-bottom: 14px; }
+    .Healthy { background: #2e7d32; color: white; }
+    .Mild    { background: #f57f17; color: white; }
+    .High    { background: #c62828; color: white; }
+    .Loading { background: #2a4a2a; color: #4caf50; }
+    .card p { margin: 6px 0; font-size: 0.92em; }
+    .card strong { color: white; }
+    .transfer-arrow { text-align: center; font-size: 1.1em; color: #4caf5066; margin: 8px 0 20px; }
+    .chart-card { background: #1a2f1a; border-radius: 12px; padding: 20px; margin: 16px 0; }
+    .chart-card h2 { margin: 0 0 16px 0; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .chart-wrap h3 { font-size: 0.78em; margin: 0 0 8px 0; letter-spacing: 0.1em; text-transform: uppercase; }
+    .chart-wrap.source   h3 { color: #4caf50; }
+    .chart-wrap.receiver h3 { color: #ffb300; }
+    .conn { font-size: 0.75em; color: #4caf5066; text-align: right; margin-top: 12px; }
+    .conn.error { color: #c6282866; }
+  </style>
+</head>
+<body>
+
+  <h1>🌿 PhytoClone</h1>
+  <p class="subtitle">Bioelectric Transfer System</p>
+  <div class="transfer-arrow">Plant A (source) &nbsp;⟶&nbsp; Plant B (receiver)</div>
+
+  <div class="plant-grid">
+    <div class="card source">
+      <div class="plant-label">Signal Source</div>
+      <h2>Plant A</h2>
+      <span id="stress-a" class="stress-badge Loading">Waiting...</span>
+      <p>Moisture: <strong id="moisture-a">--</strong>%</p>
+      <p>Temperature: <strong id="temp-a">--</strong>°C</p>
+      <p>Light: <strong id="light-a">--</strong>%</p>
+    </div>
+    <div class="card receiver">
+      <div class="plant-label">Signal Receiver</div>
+      <h2>Plant B</h2>
+      <span id="stress-b" class="stress-badge Loading">Waiting...</span>
+      <p>Moisture: <strong id="moisture-b">--</strong>%</p>
+      <p>Temperature: <strong id="temp-b">--</strong>°C</p>
+      <p>Light: <strong id="light-b">--</strong>%</p>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2>Live Signal Feed</h2>
+    <div class="chart-row">
+      <div class="chart-wrap source">
+        <h3>Plant A — Source</h3>
+        <canvas id="chart-a" height="130"></canvas>
+      </div>
+      <div class="chart-wrap receiver">
+        <h3>Plant B — Receiver</h3>
+        <canvas id="chart-b" height="130"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <p class="conn" id="conn-status">Connecting to backend...</p>
+
+  <script>
+    const API = "http://localhost:5000"; // ← replace with your IP
+
+    function makeChart(id, colors) {
+      return new Chart(document.getElementById(id).getContext("2d"), {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            { label: "Moisture %", data: [], borderColor: colors[0], tension: 0.3, pointRadius: 0 },
+            { label: "Temp °C",    data: [], borderColor: colors[1], tension: 0.3, pointRadius: 0 },
+            { label: "Light %",    data: [], borderColor: colors[2], tension: 0.3, pointRadius: 0 }
+          ]
+        },
+        options: {
+          animation: false,
+          scales: {
+            x: { ticks: { color: "#c8f0c8", maxTicksLimit: 6 } },
+            y: { ticks: { color: "#c8f0c8" } }
+          },
+          plugins: { legend: { labels: { color: "#c8f0c8", boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    const chartA = makeChart("chart-a", ["#4fc3f7", "#ef9a9a", "#fff176"]);
+    const chartB = makeChart("chart-b", ["#ffb300", "#ff7043", "#ce93d8"]);
+
+    function setStatus(suffix, r) {
+      document.getElementById("moisture-" + suffix).textContent = r.moisture ?? "--";
+      document.getElementById("temp-"     + suffix).textContent = r.temp     ?? "--";
+      document.getElementById("light-"    + suffix).textContent = r.light    ?? "--";
+      const badge = document.getElementById("stress-" + suffix);
+      const stress = r.stress || "Healthy";
+      badge.textContent = stress;
+      badge.className   = "stress-badge " + stress.split(" ")[0];
+    }
+
+    function updateChart(chart, data) {
+      chart.data.labels           = data.map((_, i) => i);
+      chart.data.datasets[0].data = data.map(d => d.moisture);
+      chart.data.datasets[1].data = data.map(d => d.temp);
+      chart.data.datasets[2].data = data.map(d => d.light);
+      chart.update();
+    }
+
+    async function fetchData() {
+      try {
+        const [resA, resB] = await Promise.all([
+          fetch(`${API}/readings/a`),
+          fetch(`${API}/readings/b`)
+        ]);
+        const dataA = await resA.json();
+        const dataB = await resB.json();
+        if (dataA.length) { setStatus("a", dataA[dataA.length - 1]); updateChart(chartA, dataA); }
+        if (dataB.length) { setStatus("b", dataB[dataB.length - 1]); updateChart(chartB, dataB); }
+        document.getElementById("conn-status").textContent = "Last updated: " + new Date().toLocaleTimeString();
+        document.getElementById("conn-status").className = "conn";
+      } catch (err) {
+        document.getElementById("conn-status").textContent = "Cannot reach backend — is Flask running? (" + err.message + ")";
+        document.getElementById("conn-status").className = "conn error";
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 5000);
+  </script>
+</body>
+</html>
