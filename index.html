@@ -5,142 +5,168 @@
   <title>PhytoClone</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: sans-serif; background: #0f1f0f; color: #c8f0c8; margin: 0; padding: 20px; }
-    h1 { color: #4caf50; margin-bottom: 4px; }
-    .subtitle { font-size: 0.8em; color: #4caf5088; margin-bottom: 20px; letter-spacing: 0.1em; }
-    .plant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
-    .card { background: #1a2f1a; border-radius: 12px; padding: 20px; }
-    .card.source   { border-top: 3px solid #4caf50; }
-    .card.receiver { border-top: 3px solid #ffb300; }
-    .plant-label { font-size: 0.68em; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 4px; }
-    .source   .plant-label { color: #4caf50; }
-    .receiver .plant-label { color: #ffb300; }
-    .card h2 { margin: 0 0 14px 0; font-size: 1.1em; }
-    .stress-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 0.95em; margin-bottom: 14px; }
-    .Healthy { background: #2e7d32; color: white; }
-    .Mild    { background: #f57f17; color: white; }
-    .High    { background: #c62828; color: white; }
-    .Loading { background: #2a4a2a; color: #4caf50; }
-    .card p { margin: 6px 0; font-size: 0.92em; }
-    .card strong { color: white; }
-    .transfer-arrow { text-align: center; font-size: 1.1em; color: #4caf5066; margin: 8px 0 20px; }
-    .chart-card { background: #1a2f1a; border-radius: 12px; padding: 20px; margin: 16px 0; }
-    .chart-card h2 { margin: 0 0 16px 0; }
-    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .chart-wrap h3 { font-size: 0.78em; margin: 0 0 8px 0; letter-spacing: 0.1em; text-transform: uppercase; }
-    .chart-wrap.source   h3 { color: #4caf50; }
-    .chart-wrap.receiver h3 { color: #ffb300; }
-    .conn { font-size: 0.75em; color: #4caf5066; text-align: right; margin-top: 12px; }
-    .conn.error { color: #c6282866; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0a150a; color: #c8f0c8; padding: 32px; }
+    h1   { color: #4caf50; font-size: 1.8rem; margin-bottom: 4px; }
+    p.sub{ color: #4caf5066; font-size: 0.75em; margin-bottom: 28px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+    .card { background: #122012; border: 1px solid #1e3020; border-radius: 10px; padding: 24px; }
+    .card.a { border-top: 3px solid #4caf50; }
+    .card.b { border-top: 3px solid #ffb300; }
+
+    .tag  { font-size: 0.6em; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+    .card.a .tag { color: #4caf50; }
+    .card.b .tag { color: #ffb300; }
+
+    .mv      { font-size: 3rem; font-weight: 300; line-height: 1; }
+    .card.a .mv { color: #86efac; }
+    .card.b .mv { color: #fde68a; }
+    .mv span { font-size: 1rem; color: #4caf5066; margin-left: 6px; }
+
+    .badge { display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 0.8em; font-weight: bold; margin-top: 14px; }
+    .Healthy { background: #14532d; color: #86efac; }
+    .Mild    { background: #78350f; color: #fde68a; }
+    .High    { background: #7f1d1d; color: #fca5a5; }
+    .Waiting { background: #1a2f1a; color: #4caf5066; }
+
+    .stats   { display: flex; gap: 24px; margin-top: 16px; }
+    .stat .l { font-size: 0.6em; color: #4caf5066; letter-spacing: 0.1em; text-transform: uppercase; }
+    .stat .v { font-size: 1rem; color: #c8f0c8; margin-top: 2px; }
+
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .chart-card { background: #122012; border: 1px solid #1e3020; border-radius: 10px; padding: 20px; }
+    .chart-card h3 { font-size: 0.65em; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 14px; }
+    .chart-card.a h3 { color: #4caf5066; }
+    .chart-card.b h3 { color: #ffb30066; }
+
+    .ml { background: #122012; border: 1px solid #1e3020; border-radius: 10px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .ml p { font-size: 0.75em; color: #4caf5066; }
+    #rtxt { font-size: 0.7em; color: #4caf50; margin-top: 4px; }
+    button { background: transparent; border: 1px solid #4caf50; color: #4caf50; font-family: monospace; font-size: 0.8em; padding: 9px 20px; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #4caf5015; }
+    .foot { font-size: 0.65em; color: #4caf5033; text-align: right; margin-top: 12px; }
+    .foot.err { color: #ef444455; }
+
+    @media (max-width: 600px) {
+      .grid, .chart-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🌿 PhytoClone</h1>
-  <p class="subtitle">Bioelectric Transfer System</p>
-  <div class="transfer-arrow">Plant A (source) &nbsp;⟶&nbsp; Plant B (receiver)</div>
+<h1>🌿 PhytoClone</h1>
+<p class="sub">Bioelectric Signal Monitor · ADS1115 · Plant A → Plant B</p>
 
-  <div class="plant-grid">
-    <div class="card source">
-      <div class="plant-label">Signal Source</div>
-      <h2>Plant A</h2>
-      <span id="stress-a" class="stress-badge Loading">Waiting...</span>
-      <p>Moisture: <strong id="moisture-a">--</strong>%</p>
-      <p>Temperature: <strong id="temp-a">--</strong>°C</p>
-      <p>Light: <strong id="light-a">--</strong>%</p>
-    </div>
-    <div class="card receiver">
-      <div class="plant-label">Signal Receiver</div>
-      <h2>Plant B</h2>
-      <span id="stress-b" class="stress-badge Loading">Waiting...</span>
-      <p>Moisture: <strong id="moisture-b">--</strong>%</p>
-      <p>Temperature: <strong id="temp-b">--</strong>°C</p>
-      <p>Light: <strong id="light-b">--</strong>%</p>
+<!-- Status cards -->
+<div class="grid">
+
+  <div class="card a">
+    <div class="tag">Signal Source · Plant A</div>
+    <div class="mv" id="mv-a">--<span>mV</span></div>
+    <div class="badge Waiting" id="badge-a">Waiting for signal</div>
+    <div class="stats">
+      <div class="stat"><div class="l">Anomaly Score</div><div class="v" id="score-a">--</div></div>
+      <div class="stat"><div class="l">Readings</div><div class="v" id="count-a">0</div></div>
+      <div class="stat"><div class="l">ML Model</div><div class="v" id="mlst">Not trained</div></div>
     </div>
   </div>
 
-  <div class="chart-card">
-    <h2>Live Signal Feed</h2>
-    <div class="chart-row">
-      <div class="chart-wrap source">
-        <h3>Plant A — Source</h3>
-        <canvas id="chart-a" height="130"></canvas>
-      </div>
-      <div class="chart-wrap receiver">
-        <h3>Plant B — Receiver</h3>
-        <canvas id="chart-b" height="130"></canvas>
-      </div>
+  <div class="card b">
+    <div class="tag">Signal Receiver · Plant B</div>
+    <div class="mv" id="mv-b">--<span>mV</span></div>
+    <div class="badge Waiting" id="badge-b">Waiting for signal</div>
+    <div class="stats">
+      <div class="stat"><div class="l">Anomaly Score</div><div class="v" id="score-b">--</div></div>
+      <div class="stat"><div class="l">Readings</div><div class="v" id="count-b">0</div></div>
     </div>
   </div>
 
-  <p class="conn" id="conn-status">Connecting to backend...</p>
+</div>
 
-  <script>
-    const API = "http://localhost:5000"; // ← replace with your IP
+<!-- Charts -->
+<div class="chart-grid">
+  <div class="chart-card a">
+    <h3>Plant A — Source (mV)</h3>
+    <canvas id="chart-a" height="100"></canvas>
+  </div>
+  <div class="chart-card b">
+    <h3>Plant B — Receiver (mV)</h3>
+    <canvas id="chart-b" height="100"></canvas>
+  </div>
+</div>
 
-    function makeChart(id, colors) {
-      return new Chart(document.getElementById(id).getContext("2d"), {
-        type: "line",
-        data: {
-          labels: [],
-          datasets: [
-            { label: "Moisture %", data: [], borderColor: colors[0], tension: 0.3, pointRadius: 0 },
-            { label: "Temp °C",    data: [], borderColor: colors[1], tension: 0.3, pointRadius: 0 },
-            { label: "Light %",    data: [], borderColor: colors[2], tension: 0.3, pointRadius: 0 }
-          ]
-        },
-        options: {
-          animation: false,
-          scales: {
-            x: { ticks: { color: "#c8f0c8", maxTicksLimit: 6 } },
-            y: { ticks: { color: "#c8f0c8" } }
-          },
-          plugins: { legend: { labels: { color: "#c8f0c8", boxWidth: 12, font: { size: 11 } } } }
-        }
-      });
+<!-- ML -->
+<div class="ml">
+  <div>
+    <p>Let plant sit healthy, then retrain so the model learns the normal signal.</p>
+    <div id="rtxt"></div>
+  </div>
+  <button onclick="retrain()">🧠 Retrain</button>
+</div>
+
+<p class="foot" id="foot">Connecting...</p>
+
+<script>
+  const API = "http://localhost:5001";
+
+  function makeChart(id, color) {
+    return new Chart(document.getElementById(id).getContext("2d"), {
+      type: "line",
+      data: { labels: [], datasets: [{ label: "mV", data: [], borderColor: color, backgroundColor: color + "15", tension: 0.4, pointRadius: 0, fill: true }] },
+      options: { animation: false, scales: { x: { ticks: { color: "#4caf5055" }, grid: { color: "#1e3020" } }, y: { ticks: { color: "#4caf5055" }, grid: { color: "#1e3020" } } }, plugins: { legend: { display: false } } }
+    });
+  }
+
+  const chartA = makeChart("chart-a", "#4caf50");
+  const chartB = makeChart("chart-b", "#ffb300");
+
+  function updateCard(suffix, data, chart) {
+    if (!data.length) return;
+    const l = data[data.length - 1];
+    const s = l.stress || "Healthy";
+    document.getElementById(`mv-${suffix}`).innerHTML = `${parseFloat(l.voltage_mv).toFixed(3)}<span>mV</span>`;
+    document.getElementById(`score-${suffix}`).textContent = l.anomaly_score ?? "--";
+    document.getElementById(`count-${suffix}`).textContent  = data.length;
+    const b = document.getElementById(`badge-${suffix}`);
+    b.textContent = s; b.className = "badge " + s.split(" ")[0];
+    chart.data.labels = data.map((_, i) => i);
+    chart.data.datasets[0].data = data.map(x => parseFloat(x.voltage_mv).toFixed(3));
+    chart.update();
+  }
+
+  async function fetchData() {
+    try {
+      const [ra, rb] = await Promise.all([
+        fetch(`${API}/readings/a`).then(r => r.json()),
+        fetch(`${API}/readings/b`).then(r => r.json())
+      ]);
+      updateCard("a", ra, chartA);
+      updateCard("b", rb, chartB);
+      if (ra.length) document.getElementById("mlst").textContent =
+        ra[ra.length-1].ml_model ? "Trained ✓" : "Not trained";
+      document.getElementById("foot").textContent = "Connected · updated " + new Date().toLocaleTimeString();
+      document.getElementById("foot").className = "foot";
+    } catch (e) {
+      document.getElementById("foot").textContent = "Cannot reach Flask — is app.py running? (" + e.message + ")";
+      document.getElementById("foot").className = "foot err";
     }
+  }
 
-    const chartA = makeChart("chart-a", ["#4fc3f7", "#ef9a9a", "#fff176"]);
-    const chartB = makeChart("chart-b", ["#ffb300", "#ff7043", "#ce93d8"]);
-
-    function setStatus(suffix, r) {
-      document.getElementById("moisture-" + suffix).textContent = r.moisture ?? "--";
-      document.getElementById("temp-"     + suffix).textContent = r.temp     ?? "--";
-      document.getElementById("light-"    + suffix).textContent = r.light    ?? "--";
-      const badge = document.getElementById("stress-" + suffix);
-      const stress = r.stress || "Healthy";
-      badge.textContent = stress;
-      badge.className   = "stress-badge " + stress.split(" ")[0];
+  async function retrain() {
+    document.getElementById("rtxt").textContent = "Training...";
+    try {
+      const d = await (await fetch(`${API}/retrain`, { method: "POST" })).json();
+      document.getElementById("rtxt").textContent = d.status === "retrained" ? `✓ Trained on ${d.samples} samples` : d.error;
+      document.getElementById("mlst").textContent = "Trained ✓";
+    } catch (e) {
+      document.getElementById("rtxt").textContent = "Failed: " + e.message;
     }
+  }
 
-    function updateChart(chart, data) {
-      chart.data.labels           = data.map((_, i) => i);
-      chart.data.datasets[0].data = data.map(d => d.moisture);
-      chart.data.datasets[1].data = data.map(d => d.temp);
-      chart.data.datasets[2].data = data.map(d => d.light);
-      chart.update();
-    }
-
-    async function fetchData() {
-      try {
-        const [resA, resB] = await Promise.all([
-          fetch(`${API}/readings/a`),
-          fetch(`${API}/readings/b`)
-        ]);
-        const dataA = await resA.json();
-        const dataB = await resB.json();
-        if (dataA.length) { setStatus("a", dataA[dataA.length - 1]); updateChart(chartA, dataA); }
-        if (dataB.length) { setStatus("b", dataB[dataB.length - 1]); updateChart(chartB, dataB); }
-        document.getElementById("conn-status").textContent = "Last updated: " + new Date().toLocaleTimeString();
-        document.getElementById("conn-status").className = "conn";
-      } catch (err) {
-        document.getElementById("conn-status").textContent = "Cannot reach backend — is Flask running? (" + err.message + ")";
-        document.getElementById("conn-status").className = "conn error";
-      }
-    }
-
-    fetchData();
-    setInterval(fetchData, 5000);
-  </script>
+  fetchData();
+  setInterval(fetchData, 2000);
+</script>
 </body>
 </html>
